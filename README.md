@@ -1,4 +1,4 @@
-# DUITLATER - Malaysia's Most Trailing Deferred Payment Orchestration Service
+# DuitLater - Malaysia's Most Trailing Deferred Payment Orchestration Service
 
 > *"Because paying now is so 2026."*
 
