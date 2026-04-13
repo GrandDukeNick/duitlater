@@ -1,0 +1,285 @@
+{
+  "info": {
+    "_postman_id": "27af0fb4-df3d-481a-aa51-f9971b6c25c5",
+    "name": "DuitLater",
+    "description": "# Overview\n\nDocumentation for Malaysia's trailing deferred payment orchestration service with real-time forex conversion; we are looking for DPP (Deferred Payments Platform) partcipants!\n\n## **Auth Folder**\n\n### **POST login**\n\n- **What it does:** Get access to the system\n    \n- **URL:** `{{baseUrl}}/api/auth/login`\n    \n- **Body:**\n    \n\njson\n\n```\n{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}\n\n ```\n\n- **Response:** Returns JWT token\n    \n- **Important:** Run this FIRST — token auto-saved as `{{token}}`\n    \n\n### **GET getAllTransactions**\n\n- **What it does:** View all scheduled payments (paginated)\n    \n- **URL:** `{{baseUrl}}/api/transactions?page=0&size=10`\n    \n- **Headers:** `Authorization: Bearer {{token}}`\n    \n- **Use case:** See transaction history, 10 records per page\n    \n\n### **GET getTransactionByUuid**\n\n- **What it does:** View a single transaction\n    \n- **URL:** `{{baseUrl}}/api/transactions/{{transactionUuid}}`\n    \n- **Headers:** `Authorization: Bearer {{token}}`\n    \n- **Use case:** Check details of specific payment\n    \n\n### **POST schedulePayment**\n\n- **What it does:** Create a new deferred payment\n    \n- **URL:** `{{baseUrl}}/api/transactions/schedule`\n    \n- **Headers:** `Authorization: Bearer {{token}}`\n    \n- **Body:**\n    \n\njson\n\n```\n{\n    \"customerUuid\": \"{{customerUuid}}\",\n    \"accountUuid\": \"{{accountUuid}}\",\n    \"fromAmount\": 100.00,\n    \"fromCurrency\": \"USD\",\n    \"toCurrency\": \"MYR\",\n    \"scheduledDate\": \"2026-05-15\",\n    \"recipientAccount\": \"RECIPIENT_999\",\n    \"recipientName\": \"Test Recipient\"\n}\n\n ```\n\n- **Use case:** Schedule money transfer with currency conversion\n    \n\n### **PUT updateStatus**\n\n- **What it does:** Cancel or complete a transaction\n    \n- **URL:** `{{baseUrl}}/api/transactions/{{transactionUuid}}/status`\n    \n- **Headers:** `Authorization: Bearer {{token}}`\n    \n- **Body:**\n    \n\njson\n\n```\n{\n    \"action\": \"CANCEL\",\n    \"reason\": \"Customer requested\"\n}\n\n ```\n\n- **Use case:** Update payment status (CANCEL or COMPLETE)\n    \n\n---\n\n## **Typical Flow**\n\n```\n1. POST login \n   ↓ (gets token)\n2. POST schedulePayment \n   ↓ (gets transactionUuid)\n3. GET getAllTransactions \n   ↓ (verify it's there)\n4. PUT updateStatus \n   ↓ (CANCEL or COMPLETE)\n5. GET getTransactionByUuid \n   (verify status changed)\n\n ```\n\n---\n\n## 📦 **Variables Used**\n\n| Variable | Where it's used |\n| --- | --- |\n| `{{baseUrl}}` | All requests |\n| `{{token}}` | All protected requests (auto-filled after login) |\n| `{{customerUuid}}` | POST schedulePayment |\n| `{{accountUuid}}` | POST schedulePayment |\n| `{{transactionUuid}}` | GET by UUID, PUT updateStatus |\n\n---\n\n## ✅ **Quick Test Order**\n\n1. **Login** → Get token\n    \n2. **Schedule Payment** → Create transaction\n    \n3. **Get All Transactions** → See pagination (10 per page)\n    \n4. **Update Status** → Cancel or complete\n    \n5. **Get by UUID** → Verify status changed",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "29466425"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set(\"token\", response.accessToken);",
+                  "",
+                  "console.log(\"Token stored: \" + response.accessToken);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "",
+                "value": "",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "In the interest of time and avoidance of feature creep, user role is only limited to admin. Authorization is handled by the login API which if successful, generates a JWT (JSON web token) which allows access to the transaction-related APIs. Successful authentication relies on a matching password hash."
+    },
+    {
+      "name": "Transaction",
+      "item": [
+        {
+          "name": "getTransactionByUuid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/uuid/{{transactionUuid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "uuid",
+                "{{transactionUuid}}"
+              ]
+            },
+            "description": "Note -- this comes with pagination; adjust the variables in the URL params!"
+          },
+          "response": []
+        },
+        {
+          "name": "schedulePayment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"customerUuid\": \"{{customerUuid}}\",\n    \"accountUuid\": \"{{accountUuid}}\",\n    \"fromAmount\": 100.00,\n    \"fromCurrency\": \"USD\",\n    \"toCurrency\": \"MYR\",\n    \"scheduledDate\": \"2026-05-15\",\n    \"recipientAccount\": \"RECIPIENT_999\",\n    \"recipientName\": \"Test Recipient\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "schedule"
+              ]
+            },
+            "description": "Note -- this comes with pagination; adjust the variables in the URL params!"
+          },
+          "response": []
+        },
+        {
+          "name": "updateStatus",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"action\": \"CANCEL\",\n    \"reason\": \"Cancelled by user.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{transactionUuid}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{transactionUuid}}",
+                "status"
+              ]
+            },
+            "description": "Note -- this comes with pagination; adjust the variables in the URL params!"
+          },
+          "response": []
+        },
+        {
+          "name": "getAllTransactions",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?page=0&size=20&sort=scheduledDate&sortDir=desc&statusCode=SCHEDULED&customerUuid={{customerUuid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Number of rows in page"
+                },
+                {
+                  "key": "sort",
+                  "value": "scheduledDate"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "desc",
+                  "description": "asc / desc (sorting)"
+                },
+                {
+                  "key": "statusCode",
+                  "value": "SCHEDULED",
+                  "description": "SCHEDULED / CANCELLED / COMPLETED"
+                },
+                {
+                  "key": "customerUuid",
+                  "value": "{{customerUuid}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "username",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "customerUuid",
+      "value": ""
+    },
+    {
+      "key": "transactionUuid",
+      "value": ""
+    },
+    {
+      "key": "accountUuid",
+      "value": ""
+    }
+  ]
+}
